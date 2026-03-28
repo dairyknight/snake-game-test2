@@ -41,6 +41,7 @@
         text-align: center;
         padding: 24px;
         line-height: normal; /* reset: #canvas-container sets line-height:0 to kill phantom space; overlays must override */
+        font-family: system-ui, -apple-system, sans-serif; /* reset: body inherits Times from browser UA; overlays use system sans-serif per design spec */
       }
       /* Critical: hidden attribute must win over display:flex and display:grid */
       .screen-overlay[hidden] { display: none; }
