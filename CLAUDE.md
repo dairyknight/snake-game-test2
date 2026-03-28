@@ -173,6 +173,31 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 8 — HTML Screen Overlays & Accessibility
+
+**Architecture**
+- `src/ui/` module: `StartScreen` (IDLE), `GameOverScreen` (GAME_OVER), `PauseOverlay` (PAUSED), `AriaAnnouncer` (live regions).
+- Screen overlays are `position: absolute; inset: 0` inside `#canvas-container { position: relative; display: inline-block; line-height: 0 }`. The container's `line-height: 0` eliminates phantom canvas space — overlays MUST override with `line-height: normal` or all text collapses to 0px height.
+- `[hidden]` attribute toggled via `el.removeAttribute('hidden')` / `el.setAttribute('hidden', '')`. CSS overrides required: `.screen-overlay[hidden] { display: none; }` and `#dpad[hidden] { display: none; }` — CSS `display:flex`/`display:grid` beat UA `[hidden]` without explicit override.
+- `GameManager.clearHighScore()` delegate added in Phase 8.
+- `RendererConfig.showCanvasOverlay?: boolean` added; production `main.ts` passes `{ showCanvasOverlay: false }` to disable canvas overlay path. Default `true` so Phase 6 tests still pass.
+- `gameManager.events.on('stateChange', ({ to }) => { if (to === GameState.PLAYING) gameLoop.start(); })` in `main.ts` — GameLoop stops on GAME_OVER, must restart on Play Again.
+- ARIA live regions: `#score-announcer` (aria-live="polite") updated on `scoreUpdate`; `#state-announcer` (aria-live="assertive") updated on `stateChange`. Both are page-level DOM nodes outside `#game-wrapper`, present from page load.
+
+**Gotchas**
+- **`line-height` inheritance**: `#canvas-container` sets `line-height: 0`. All descendant elements inherit it — including `position: absolute` overlays. Add `line-height: normal` to `.screen-overlay` or text renders at 0px height.
+- **`display:grid` > `[hidden]`**: `#dpad { display: grid }` has higher specificity than the browser UA `[hidden] { display: none }`. Add `#dpad[hidden] { display: none; }` alongside the overlay rule. Same principle applies for any `display:flex`/`display:grid` element with a `hidden` attribute.
+- **Score capture timing**: `GameOverScreen` stores score from the `gameOver` event payload — NOT from `getScore()`. `restartGame()` calls `scoreManager.reset()`, so `getScore()` returns 0 before the overlay can display it. Capture from the event payload which fires before reset.
+- **GameLoop restart**: GameLoop.stop() is called on GAME_OVER state. Must call `gameLoop.start()` again when re-entering PLAYING. Guard in `GameLoop.start()`: `if (this._running) return` prevents double-start.
+- **TS noUnusedLocals with UI singletons**: `const _announcer = new AriaAnnouncer(gameManager)` is flagged even with `_` prefix when declared at module scope. Use `new AriaAnnouncer(gameManager)` without assignment — EventEmitter subscriptions keep the instance alive.
+- **`font-family` on overlays**: Browser UA applies Times serif to h1/h2 unless overridden. Add `font-family: system-ui, -apple-system, sans-serif` to `.screen-overlay`.
+- **WCAG AA for UI components**: Border color must be ≥3:1 contrast ratio against background. `#475569` (2.67:1) fails; raised to `#64748B` (3.8:1). Touch target min-height: 44px per WCAG 2.5.5.
+
+**Patterns to Reuse**
+- EventEmitter off() requires stored bound ref: `private readonly _onX = this._handleX.bind(this)` in constructor; pass same ref to `manager.events.off('event', this._onX)` in `destroy()`.
+- PauseOverlay focus trap pattern: save `document.activeElement` on show, restore on hide.
+- Screen overlay test setup: `document.body.innerHTML = \`<overlay HTML>\`` in `beforeEach`; `document.body.innerHTML = ''` in `afterEach`. Call `announcer.destroy()` before clearing.
+
 ### Phase 7 — Input Handling
 
 **Architecture**

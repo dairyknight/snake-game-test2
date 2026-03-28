@@ -1,6 +1,6 @@
 # Phase 8 — UI Screens (HTML/CSS)
 
-**Status:** `⬜ Not Started`
+**Status:** `✅ Done` — PR #8 https://github.com/dairyknight/snake-game-test2/pull/8
 
 ## Goal
 
