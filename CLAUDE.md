@@ -173,6 +173,26 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 7 — Input Handling
+
+**Architecture**
+- `KeyboardInput`: binds `this._handler` in constructor, stores in field for removal in `destroy()`. Maps Arrow/WASD → `queueDirection()`, P/Esc → `togglePause()`, Space/Enter → `startGame()`/`restartGame()` depending on `getState()`.
+- `TouchInput`: swipe detection via touchstart/touchend on window (30px threshold, dominant axis wins). `MediaQueryList('(max-width: 767px)')` for live viewport detection — shows/hides #dpad. `_btnCleanups: Array<() => void>` array holds cleanup lambdas for button click/pointer listeners; `_hideDpad()` drains and calls all.
+- D-pad is static HTML in `index.html` with `hidden` attribute — `TouchInput` calls `removeAttribute('hidden')` / `setAttribute('hidden', '')`. Avoids DOM creation/destruction on orientation change.
+- `#game-wrapper` column-flex div wraps canvas + dpad; gap: 16px. Canvas is constrained on mobile with `min(90vmin, calc(100svh - 192px))` (192px = 176px dpad + 16px gap).
+
+**Gotchas**
+- **TS 5.9 noUnusedLocals** flags `_`-prefixed module-level `const` vars even with underscore prefix — `const _keyboardInput = new KeyboardInput(...)` at module scope fails tsc. Fix: `new KeyboardInput(gameManager)` without assignment; the window listener holds a bound-handler ref → instance is NOT garbage collected.
+- **{ passive: false }** is required when calling `preventDefault()` in touchstart/touchend — modern browsers default to `passive: true` and silently ignore `preventDefault()` in passive listeners. Scroll suppression breaks without it.
+- `_btnCleanups` pattern is mandatory for anonymous button listeners — `removeEventListener(event, anonymousLambda)` is always a no-op. Store cleanup closures and drain in `destroy()`.
+- `MediaQueryList.addEventListener('change', handler)` (not `.addListener()` — deprecated). Remove with `removeEventListener` in `destroy()`.
+- No 180° reversal guard in `KeyboardInput` — `getSnake().currentDirection` in a keydown handler returns stale direction between ticks. `Snake.move()` is the authoritative single guard.
+
+**Patterns to Reuse**
+- `new SomeClass(manager)` without var for page-lifetime singletons where TS noUnusedLocals would flag the var.
+- `_btnCleanups: Array<() => void>` — push `() => btn.removeEventListener(...)` when wiring; call and drain in cleanup.
+- Mock GameManager for input tests: `{ getState: vi.fn(), queueDirection: vi.fn(), togglePause: vi.fn(), startGame: vi.fn(), restartGame: vi.fn() } as unknown as GameManager`
+
 ### Phase 6 — Canvas Rendering Pipeline
 
 **Architecture**

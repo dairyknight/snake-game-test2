@@ -82,3 +82,16 @@ Tracks every skill invocation across all phases for analysis.
 | 6 | /phase-test → /cso | Main Agent | SKIPPED — reviewed phase-plan /cso findings (no security surface) |
 | 6 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; ADR-001 created; PR #6: https://github.com/dairyknight/snake-game-test2/pull/6 |
 | 6 | /phase-compact | Main Agent | SUCCESS — phase-6-ledger.md written, session-state updated, CLAUDE.md Phase 6 knowledge added, phase-06.md marked Done |
+| 7 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — 5 binding decisions: no reversal guard in KeyboardInput, togglePause not separate pause/resume, MediaQueryList not innerWidth snapshot, _btnCleanups array, no var assignment for TS 5.9 |
+| 7 | /phase-plan → /plan-design-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — D-pad meets touch target specs (56×56px); WCAG AA contrast on active state; mobile canvas height constraint identified as risk |
+| 7 | /phase-plan → /cso | Main Agent | SKIPPED — input handling has no auth/API/data storage surface; KeyboardInput/TouchInput purely dispatch to existing GameManager methods |
+| 7 | /phase-execute (tracer bullet T0) | Main Agent | SUCCESS — src/input/ created, KeyboardInput.ts skeleton, main.ts wired; tsc --noEmit passes; fixed TS 5.9 noUnusedLocals by dropping var assignment |
+| 7 | /phase-execute (T1: KeyboardInput full + tests) | Sub-Agent | SUCCESS — KeyboardInput.ts full implementation + 21 tests; 233 total; commit |
+| 7 | /phase-execute (T2: TouchInput + D-pad) | Sub-Agent | SUCCESS — TouchInput.ts + index.html D-pad + 15 tests; 248 total; commit |
+| 7 | /phase-execute (T3: Integration wiring) | Sub-Agent | SUCCESS — main.ts final state (no var assignments); tsc + tests + build all pass |
+| 7 | /phase-test → /review (Stage 1) | Main Agent | APPROVED — 1 fix: _btnCleanups pattern (anonymous listeners couldn't be removed on destroy); regression test added |
+| 7 | /phase-test → /qa (Stage 2) | Sub-Agent | PASS with 1 fix: mobile canvas height calc(100svh - 156px) → calc(100svh - 192px); ISSUE-001 D-pad button cleanup added as regression |
+| 7 | /phase-test → /design-review | Sub-Agent | B+ — touch targets, contrast, reduced-motion all pass; 1 deferral: mobile canvas height clipping (fixed in QA) |
+| 7 | /phase-test → /cso | Main Agent | SKIPPED — reviewed phase-plan /cso findings (no security surface) |
+| 7 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; 248/248 tests; PR #7: https://github.com/dairyknight/snake-game-test2/pull/7 |
+| 7 | /phase-compact | Main Agent | SUCCESS — phase-7-ledger.md written, session-state updated, CLAUDE.md Phase 7 knowledge added, phase-07.md marked Done |

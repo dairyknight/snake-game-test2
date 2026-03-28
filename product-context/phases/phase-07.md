@@ -1,6 +1,6 @@
 # Phase 7 — Input Handling
 
-**Status:** `⬜ Not Started`
+**Status:** `✅ Done` — PR #7 https://github.com/dairyknight/snake-game-test2/pull/7
 
 ## Goal
 
