@@ -36,6 +36,11 @@ export class GameManager {
     return this._scoreManager.highScore;
   }
 
+  /** Clear the stored high score (delegates to ScoreManager). */
+  clearHighScore(): void {
+    this._scoreManager.clearHighScore();
+  }
+
   /** Tick interval (ms) based on current score bracket — delegates to ScoreManager. */
   getTickInterval(): number {
     return this._scoreManager.getTickInterval();

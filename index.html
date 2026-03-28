@@ -16,12 +16,84 @@
         align-items: center;
         gap: 16px;
       }
+      #canvas-container {
+        position: relative;
+        display: inline-block;
+        line-height: 0;
+      }
       @media (max-width: 767px) {
         #game-canvas {
           width: min(90vmin, calc(100svh - 192px));
           height: min(90vmin, calc(100svh - 192px));
         }
       }
+      /* Screen overlays */
+      .screen-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #F8FAFC;
+        text-align: center;
+        padding: 24px;
+      }
+      /* Critical: hidden attribute must win over display:flex */
+      .screen-overlay[hidden] { display: none; }
+      #pause-overlay {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .screen-overlay h1,
+      .screen-overlay h2 {
+        font-size: clamp(1.5rem, 5vmin, 3rem);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #FFFFFF;
+      }
+      #final-score-value {
+        font-size: clamp(2.5rem, 8vmin, 5rem);
+        font-weight: 700;
+        color: #4ADE80;
+      }
+      /* Buttons */
+      .screen-btn {
+        min-width: 140px;
+        padding: 12px 24px;
+        background: #22C55E;
+        color: #0F172A;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .screen-btn:hover { background: #4ADE80; }
+      .screen-btn:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
+      .screen-btn-secondary {
+        background: transparent;
+        color: #F8FAFC;
+        border: 1px solid #475569;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .screen-btn-secondary:hover { border-color: #64748B; }
+      .screen-btn-secondary:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
+      /* D-pad */
       #dpad {
         display: grid;
         grid-template-columns: 56px 56px 56px;
@@ -61,11 +133,51 @@
           transition: none;
         }
       }
+      /* Screen reader only utility */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     </style>
   </head>
   <body>
+    <!-- Accessibility live regions — always in DOM from page load -->
+    <div aria-live="polite" aria-atomic="true" id="score-announcer" class="sr-only"></div>
+    <div aria-live="assertive" aria-atomic="true" id="state-announcer" class="sr-only"></div>
+
     <div id="game-wrapper">
-      <canvas id="game-canvas"></canvas>
+      <div id="canvas-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Start Screen — visible in IDLE state -->
+        <div id="start-screen" class="screen-overlay" hidden>
+          <h1>SNAKE</h1>
+          <button id="start-btn" class="screen-btn">Start Game</button>
+        </div>
+
+        <!-- Game Over Screen — visible in GAME_OVER state -->
+        <div id="game-over-screen" class="screen-overlay" hidden>
+          <h2>GAME OVER</h2>
+          <div id="final-score-value">0</div>
+          <p id="final-score" style="color:#94A3B8;font-size:0.875rem">Score</p>
+          <button id="play-again-btn" class="screen-btn">Play Again</button>
+          <button id="clear-score-btn" class="screen-btn-secondary">Clear best score</button>
+        </div>
+
+        <!-- Pause Overlay — visible in PAUSED state; canvas visible behind it -->
+        <div id="pause-overlay" class="screen-overlay" hidden>
+          <h2>PAUSED</h2>
+          <button id="resume-btn" class="screen-btn">Resume</button>
+        </div>
+      </div>
+
       <div id="dpad" role="group" aria-label="Directional controls" hidden>
         <button class="dpad-btn" id="dpad-up"    aria-label="Move up">▲</button>
         <button class="dpad-btn" id="dpad-left"  aria-label="Move left">◀</button>

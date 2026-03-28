@@ -8,7 +8,8 @@ import { UIRenderer } from '@/renderer/UIRenderer';
 const GRID_SIZE = 20;
 
 export interface RendererConfig {
-  showGrid?: boolean; // default: false
+  showGrid?: boolean;          // default: false
+  showCanvasOverlay?: boolean; // default: true; set false when HTML overlay screens are active
 }
 
 export class Renderer {
@@ -17,6 +18,7 @@ export class Renderer {
   private readonly _manager: GameManager;
   private _cellSize = 0;
   private readonly _showGrid: boolean;
+  private readonly _showCanvasOverlay: boolean;
   private readonly _resizeHandler: () => void;
 
   private readonly _snakeRenderer: SnakeRenderer;
@@ -35,6 +37,7 @@ export class Renderer {
     this._ctx = ctx;
     this._manager = manager;
     this._showGrid = config?.showGrid ?? false;
+    this._showCanvasOverlay = config?.showCanvasOverlay ?? true;
 
     this._resizeHandler = this.resize.bind(this);
     window.addEventListener('resize', this._resizeHandler);
@@ -107,10 +110,12 @@ export class Renderer {
       this._manager.getTickInterval(),
     );
 
-    // 7. Draw overlay for PAUSED or GAME_OVER
-    const state = this._manager.getState();
-    if (state === GameState.PAUSED || state === GameState.GAME_OVER) {
-      this._uiRenderer.drawOverlay(this._ctx, canvasSize, canvasSize, state, this._manager.getScore());
+    // 7. Draw overlay for PAUSED or GAME_OVER (suppressed when HTML screens are active)
+    if (this._showCanvasOverlay) {
+      const state = this._manager.getState();
+      if (state === GameState.PAUSED || state === GameState.GAME_OVER) {
+        this._uiRenderer.drawOverlay(this._ctx, canvasSize, canvasSize, state, this._manager.getScore());
+      }
     }
   }
 
