@@ -6,15 +6,6 @@ export type DrawCallback = (interpolation: number) => void;
 
 const MAX_TICKS_PER_FRAME = 3;
 
-/** Score → tick interval lookup (ms). Lower = faster. */
-function intervalForScore(score: number): number {
-  if (score >= 70) return 70;
-  if (score >= 40) return 90;
-  if (score >= 20) return 110;
-  if (score >= 10) return 130;
-  return 150;
-}
-
 export class GameLoop {
   private _running = false;
   private _rafId = 0;
@@ -49,7 +40,7 @@ export class GameLoop {
     }
 
     const state = this._manager.getState();
-    const tickInterval = intervalForScore(this._manager.getScore());
+    const tickInterval = this._manager.getTickInterval();
 
     if (state === GameState.PLAYING) {
       const delta = now - this._lastTime;

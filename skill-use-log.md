@@ -55,3 +55,6 @@ Tracks every skill invocation across all phases for analysis.
 | 4 | /phase-test → /cso | Main Agent | SKIPPED — no security surface |
 | 4 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; PR #4: https://github.com/dairyknight/snake-game-test2/pull/4 |
 | 4 | /phase-compact | Main Agent | SUCCESS — phase-4-ledger.md written, session-state.md updated, CLAUDE.md Phase 4 knowledge added |
+| 5 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — 4 binding decisions: event ownership in GameManager, getTickInterval delegation via GameManager, SPEED_SCHEDULE for-of pattern, getHighScore() deferred to Phase 6 |
+| 5 | /phase-plan → /plan-design-review | Main Agent | SKIPPED — no UI in Phase 5 |
+| 5 | /phase-plan → /cso | Main Agent | SKIPPED — localStorage only, no auth/APIs |
