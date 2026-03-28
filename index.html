@@ -10,10 +10,64 @@
       html, body { height: 100%; background: #0F172A; color-scheme: dark; }
       body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
       #game-canvas { display: block; }
+      #game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      @media (max-width: 767px) {
+        #game-canvas {
+          width: min(90vmin, calc(100svh - 156px));
+          height: min(90vmin, calc(100svh - 156px));
+        }
+      }
+      #dpad {
+        display: grid;
+        grid-template-columns: 56px 56px 56px;
+        grid-template-rows: 56px 56px 56px;
+        gap: 4px;
+      }
+      #dpad-up    { grid-column: 2; grid-row: 1; }
+      #dpad-left  { grid-column: 1; grid-row: 2; }
+      #dpad-right { grid-column: 3; grid-row: 2; }
+      #dpad-down  { grid-column: 2; grid-row: 3; }
+      .dpad-btn {
+        min-width: 56px;
+        min-height: 56px;
+        background-color: #334155;
+        border: 1px solid #475569;
+        border-radius: 8px;
+        color: #F8FAFC;
+        font-size: 20px;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 60ms ease, transform 60ms ease;
+      }
+      .dpad-btn:active,
+      .dpad-btn.pressed {
+        background-color: #4ADE80;
+        color: #0F172A;
+        transform: scale(0.92);
+        transition: none;
+      }
+      .dpad-btn:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
     </style>
   </head>
   <body>
-    <canvas id="game-canvas"></canvas>
+    <div id="game-wrapper">
+      <canvas id="game-canvas"></canvas>
+      <div id="dpad" role="group" aria-label="Directional controls" hidden>
+        <button class="dpad-btn" id="dpad-up"    aria-label="Move up">▲</button>
+        <button class="dpad-btn" id="dpad-left"  aria-label="Move left">◀</button>
+        <button class="dpad-btn" id="dpad-right" aria-label="Move right">▶</button>
+        <button class="dpad-btn" id="dpad-down"  aria-label="Move down">▼</button>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
