@@ -173,6 +173,30 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 6 — Canvas Rendering Pipeline
+
+**Architecture**
+- `Renderer.ts` orchestrates: clear → board background (#1E293B) → optional grid (#334155) → food → snake → HUD → overlay. Sub-renderers are stateless.
+- Sub-renderer signature: `draw(ctx, data, cellSize, offsetX, offsetY)` — offsetX/offsetY for centering passed on each call, not stored.
+- `UIRenderer` owns all flash timer state (`_eatFlashStart`, `_gameOverFlashStart`). Subscribes to `foodEaten` + `stateChange` in constructor; stores bound handler refs for `off()` in `destroy()`.
+- `isGameOverFlashOn(now)` → `Math.floor(elapsed / GAME_OVER_FLASH_INTERVAL_MS) % 2 === 0` — true at t=0 (snake immediately red on game-over).
+- HUD font scales: `max(12, round(canvasW / 40))` — scales linearly with canvas width (avoids fixed-px unreadability at 4K).
+- PAUSED/GAME_OVER overlays are **canvas draws** (not HTML/CSS) — see ADR-001. HTML aria-live deferred to Phase 8.
+
+**Gotchas**
+- `canvas.getContext('2d')` returns **null** in happy-dom — do NOT use `vi.spyOn(ctx, ...)` on a real canvas context; use `makeMockCtx()` factory with `vi.fn()` methods cast to `CanvasRenderingContext2D`.
+- `vi.spyOn(SnakeRenderer.prototype, 'draw')` works even after `new Renderer()` — prototype spy intercepts instance calls.
+- `Renderer.destroy()` MUST be called in `afterEach` — otherwise window resize listener accumulates across test cases.
+- `UIRenderer.destroy()` MUST be called to unsubscribe `foodEaten` + `stateChange` event handlers — happy-dom EventEmitter persists across tests.
+- `vi.stubGlobal('performance', { now: vi.fn().mockReturnValue(t) })` before emitting events in UIRenderer tests; `vi.unstubAllGlobals()` in afterEach.
+- Game-over snake flash is **single-frame only** — GameLoop calls `_onDraw(0)` once then stops. `isGameOverFlashOn` returns true at t=0 so snake renders red on that final frame. No ongoing rAF after GAME_OVER.
+- `resize()` is called in `Renderer` constructor before sub-renderers are constructed — this is intentional (sets `_cellSize` before any `draw()` call).
+
+**Patterns to Reuse**
+- Sub-renderer: stateless class, no constructor args, draw(ctx, data, cellSize, offsetX, offsetY) signature.
+- `makeMockCtx()` factory pattern for canvas tests (see Renderer.test.ts, UIRenderer.test.ts).
+- Flash timer pattern: `_startTimestamp: number | null = null`; set on event; query with `now - _startTimestamp < DURATION_MS`.
+
 ### Phase 5 — Scoring & Difficulty
 
 **Architecture**

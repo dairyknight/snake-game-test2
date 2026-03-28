@@ -1,6 +1,6 @@
 # Phase 6 — Rendering
 
-**Status:** `⬜ Not Started`
+**Status:** `✅ Done` — PR #6 https://github.com/dairyknight/snake-game-test2/pull/6
 
 ## Goal
 

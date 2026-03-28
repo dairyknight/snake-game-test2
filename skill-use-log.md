@@ -68,3 +68,17 @@ Tracks every skill invocation across all phases for analysis.
 | 5 | /phase-test → /cso | Main Agent | SKIPPED — reviewed phase-plan /cso findings (localStorage only) |
 | 5 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; PR #5: https://github.com/dairyknight/snake-game-test2/pull/5 |
 | 5 | /phase-compact | Main Agent | SUCCESS — phase-5-ledger.md written, session-state updated, CLAUDE.md Phase 5 knowledge added |
+| 6 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — 5 binding decisions: getHighScore() in T0, canvas null→throw, destroy() required, flash uses performance.now(), game-over flash single-frame |
+| 6 | /phase-plan → /plan-design-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — WCAG AA palette verified; BLOCKER resolved: canvas overlays acceptable with ADR-001; hybrid HTML model deferred to Phase 8 |
+| 6 | /phase-plan → /cso | Main Agent | SKIPPED — Canvas rendering has no auth/API/data storage surface |
+| 6 | /phase-execute (tracer bullet T0) | Main Agent | SUCCESS — getHighScore() on GameManager, Renderer.ts skeleton, main.ts wired; tsc passes; 169/169 |
+| 6 | /phase-execute (T1: SnakeRenderer) | Sub-Agent | SUCCESS — SnakeRenderer.ts + 8 tests; 198 total; commit 79eb20b |
+| 6 | /phase-execute (T2: FoodRenderer) | Sub-Agent | SUCCESS — FoodRenderer.ts + 6 tests; 198 total; commit 8456fb5 |
+| 6 | /phase-execute (T3: UIRenderer) | Sub-Agent | SUCCESS — UIRenderer.ts + 16 tests; 198 total; commit 51101ea |
+| 6 | /phase-execute (T4: Renderer full + tests) | Sub-Agent | SUCCESS — Renderer.ts full draw cycle + 14 tests; 212 total; commit 566c958 |
+| 6 | /phase-test → /review (Stage 1) | Main Agent | APPROVED — 0 required fixes; 3 minor tech debt items documented |
+| 6 | /phase-test → /qa (Stage 2) | Sub-Agent | PASS with 2 fixes: page shell CSS (index.html), responsive HUD font (UIRenderer); commits 34a8e01 + f2ab9ad |
+| 6 | /phase-test → /design-review | Sub-Agent | B+ — WCAG AA verified; 2 polish items deferred (HUD zone, font family) |
+| 6 | /phase-test → /cso | Main Agent | SKIPPED — reviewed phase-plan /cso findings (no security surface) |
+| 6 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; ADR-001 created; PR #6: https://github.com/dairyknight/snake-game-test2/pull/6 |
+| 6 | /phase-compact | Main Agent | SUCCESS — phase-6-ledger.md written, session-state updated, CLAUDE.md Phase 6 knowledge added, phase-06.md marked Done |

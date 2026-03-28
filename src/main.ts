@@ -1,12 +1,16 @@
 import { GameManager } from '@/game/GameManager';
 import { GameLoop } from '@/game/GameLoop';
+import { Renderer } from '@/renderer/Renderer';
 
 const gameManager = new GameManager();
 
-// Stub draw callback — replaced by Renderer.draw in Phase 6
-const gameLoop = new GameLoop(gameManager, (_interpolation) => {
-  // Phase 6: renderer.draw(interpolation)
-});
+const canvas = document.getElementById('game-canvas');
+if (!(canvas instanceof HTMLCanvasElement)) {
+  throw new Error('Canvas element not found');
+}
 
-// Start the loop — keyboard/touch input will drive state transitions
+const renderer = new Renderer(canvas, gameManager);
+
+const gameLoop = new GameLoop(gameManager, renderer.draw.bind(renderer));
+
 gameLoop.start();

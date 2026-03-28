@@ -31,6 +31,11 @@ export class GameManager {
     return this._scoreManager.currentScore;
   }
 
+  /** All-time high score (delegates to ScoreManager). */
+  getHighScore(): number {
+    return this._scoreManager.highScore;
+  }
+
   /** Tick interval (ms) based on current score bracket — delegates to ScoreManager. */
   getTickInterval(): number {
     return this._scoreManager.getTickInterval();
