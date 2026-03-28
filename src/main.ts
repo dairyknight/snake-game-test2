@@ -2,6 +2,7 @@ import { GameManager } from '@/game/GameManager';
 import { GameLoop } from '@/game/GameLoop';
 import { Renderer } from '@/renderer/Renderer';
 import { KeyboardInput } from '@/input/KeyboardInput';
+import { TouchInput } from '@/input/TouchInput';
 
 const gameManager = new GameManager();
 
@@ -16,5 +17,6 @@ const gameLoop = new GameLoop(gameManager, renderer.draw.bind(renderer));
 
 gameLoop.start();
 
-// Input handlers — instantiated after loop; window listeners keep instances alive
+// Input handlers — instantiated after loop; window/mql listeners keep instances alive
 new KeyboardInput(gameManager);
+new TouchInput(gameManager);
