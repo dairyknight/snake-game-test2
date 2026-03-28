@@ -68,6 +68,7 @@
       /* Buttons */
       .screen-btn {
         min-width: 140px;
+        min-height: 44px; /* WCAG 2.5.5 touch target minimum; padding alone was producing 42px */
         padding: 12px 24px;
         background: #22C55E;
         color: #0F172A;
@@ -89,7 +90,8 @@
         color: #F8FAFC;
         border: 1px solid #64748B; /* raised from #475569 (2.67:1) to #64748B (3.8:1) — WCAG AA UI component 3:1 */
         border-radius: 8px;
-        padding: 8px 16px;
+        padding: 11px 16px; /* raised from 8px to meet 44px min touch target height */
+        min-height: 44px;
         font-size: 0.875rem;
         cursor: pointer;
         user-select: none;
