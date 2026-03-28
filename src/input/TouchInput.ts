@@ -3,11 +3,14 @@ import { UP, DOWN, LEFT, RIGHT } from '@/game/Snake';
 
 const SWIPE_THRESHOLD = 30; // px minimum travel to register as swipe
 
+type BtnCleanup = () => void;
+
 export class TouchInput {
   private readonly _manager: GameManager;
   private _startX = 0;
   private _startY = 0;
   private _dpad: HTMLElement | null = null;
+  private _btnCleanups: BtnCleanup[] = [];
   private readonly _mql: MediaQueryList;
   private readonly _mqlHandler: (e: MediaQueryListEvent) => void;
   private readonly _touchStartHandler: (e: TouchEvent) => void;
@@ -67,10 +70,20 @@ export class TouchInput {
       const btn = document.getElementById(id);
       if (!btn) continue;
       const direction = dir;
-      btn.addEventListener('click', () => this._manager.queueDirection(direction));
-      btn.addEventListener('pointerdown', () => btn.classList.add('pressed'));
-      btn.addEventListener('pointerup',   () => btn.classList.remove('pressed'));
-      btn.addEventListener('pointerleave',() => btn.classList.remove('pressed'));
+      const onClick      = () => this._manager.queueDirection(direction);
+      const onPointerDown  = () => btn.classList.add('pressed');
+      const onPointerUp    = () => btn.classList.remove('pressed');
+      const onPointerLeave = () => btn.classList.remove('pressed');
+      btn.addEventListener('click', onClick);
+      btn.addEventListener('pointerdown', onPointerDown);
+      btn.addEventListener('pointerup',   onPointerUp);
+      btn.addEventListener('pointerleave', onPointerLeave);
+      this._btnCleanups.push(() => {
+        btn.removeEventListener('click', onClick);
+        btn.removeEventListener('pointerdown', onPointerDown);
+        btn.removeEventListener('pointerup', onPointerUp);
+        btn.removeEventListener('pointerleave', onPointerLeave);
+      });
     }
   }
 
@@ -78,6 +91,8 @@ export class TouchInput {
     if (this._dpad) {
       this._dpad.setAttribute('hidden', '');
       this._dpad = null;
+      for (const cleanup of this._btnCleanups) cleanup();
+      this._btnCleanups = [];
     }
   }
 

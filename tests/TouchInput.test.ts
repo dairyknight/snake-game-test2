@@ -144,5 +144,20 @@ describe('TouchInput', () => {
       // Re-create a dummy input so afterEach destroy() does not throw
       input = new TouchInput(manager);
     });
+
+    it('destroy() removes click listeners from dpad buttons — clicking after destroy does not call queueDirection', () => {
+      // Regression: D-pad button click listeners were anonymous lambdas, never removed on destroy().
+      // After destroy(), clicking a button would still fire queueDirection().
+      // Found by /qa on 2026-03-28
+      // Report: .agent/qa-reports/qa-report-localhost-2026-03-28.md
+      input.destroy();
+      document.getElementById('dpad-up')!.click();
+      document.getElementById('dpad-down')!.click();
+      document.getElementById('dpad-left')!.click();
+      document.getElementById('dpad-right')!.click();
+      expect(manager.queueDirection).not.toHaveBeenCalled();
+      // Re-create a dummy input so afterEach destroy() does not throw
+      input = new TouchInput(manager);
+    });
   });
 });
