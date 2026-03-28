@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Snake Game</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; background: #0F172A; color-scheme: dark; }
+      body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      #game-canvas { display: block; }
+      #game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      #canvas-container {
+        position: relative;
+        display: inline-block;
+        line-height: 0;
+      }
+      @media (max-width: 767px) {
+        #game-canvas {
+          width: min(90vmin, calc(100svh - 192px));
+          height: min(90vmin, calc(100svh - 192px));
+        }
+      }
+      /* Screen overlays */
+      .screen-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #F8FAFC;
+        text-align: center;
+        padding: 24px;
+        line-height: normal; /* reset: #canvas-container sets line-height:0 to kill phantom space; overlays must override */
+        font-family: system-ui, -apple-system, sans-serif; /* reset: body inherits Times from browser UA; overlays use system sans-serif per design spec */
+      }
+      /* Critical: hidden attribute must win over display:flex and display:grid */
+      .screen-overlay[hidden] { display: none; }
+      #dpad[hidden] { display: none; }
+      #pause-overlay {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .screen-overlay h1,
+      .screen-overlay h2 {
+        font-size: clamp(1.5rem, 5vmin, 3rem);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #FFFFFF;
+      }
+      #final-score-value {
+        font-size: clamp(2.5rem, 8vmin, 5rem);
+        font-weight: 700;
+        color: #4ADE80;
+      }
+      #final-score {
+        color: #94A3B8;
+        font-size: 0.875rem;
+      }
+      /* Buttons */
+      .screen-btn {
+        min-width: 140px;
+        min-height: 44px; /* WCAG 2.5.5 touch target minimum; padding alone was producing 42px */
+        padding: 12px 24px;
+        background: #22C55E;
+        color: #0F172A;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .screen-btn:hover { background: #4ADE80; }
+      .screen-btn:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
+      .screen-btn-secondary {
+        background: transparent;
+        color: #F8FAFC;
+        border: 1px solid #64748B; /* raised from #475569 (2.67:1) to #64748B (3.8:1) — WCAG AA UI component 3:1 */
+        border-radius: 8px;
+        padding: 11px 16px; /* raised from 8px to meet 44px min touch target height */
+        min-height: 44px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .screen-btn-secondary:hover { border-color: #94A3B8; }
+      .screen-btn-secondary:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
+      /* D-pad */
+      #dpad {
+        display: grid;
+        grid-template-columns: 56px 56px 56px;
+        grid-template-rows: 56px 56px 56px;
+        gap: 4px;
+      }
+      #dpad-up    { grid-column: 2; grid-row: 1; }
+      #dpad-left  { grid-column: 1; grid-row: 2; }
+      #dpad-right { grid-column: 3; grid-row: 2; }
+      #dpad-down  { grid-column: 2; grid-row: 3; }
+      .dpad-btn {
+        min-width: 56px;
+        min-height: 56px;
+        background-color: #334155;
+        border: 1px solid #475569;
+        border-radius: 8px;
+        color: #F8FAFC;
+        font-size: 20px;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 60ms ease, transform 60ms ease;
+      }
+      .dpad-btn:active,
+      .dpad-btn.pressed {
+        background-color: #4ADE80;
+        color: #0F172A;
+        transform: scale(0.92);
+        transition: none;
+      }
+      .dpad-btn:focus-visible {
+        outline: 2px solid #4ADE80;
+        outline-offset: 2px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dpad-btn {
+          transition: none;
+        }
+      }
+      /* Screen reader only utility */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Accessibility live regions — always in DOM from page load -->
+    <div aria-live="polite" aria-atomic="true" id="score-announcer" class="sr-only"></div>
+    <div aria-live="assertive" aria-atomic="true" id="state-announcer" class="sr-only"></div>
+
+    <div id="game-wrapper">
+      <div id="canvas-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Start Screen — visible in IDLE state -->
+        <div id="start-screen" class="screen-overlay" hidden>
+          <h1>SNAKE</h1>
+          <button id="start-btn" class="screen-btn">Start Game</button>
+        </div>
+
+        <!-- Game Over Screen — visible in GAME_OVER state -->
+        <div id="game-over-screen" class="screen-overlay" hidden>
+          <h2>GAME OVER</h2>
+          <div id="final-score-value">0</div>
+          <p id="final-score">Score</p>
+          <button id="play-again-btn" class="screen-btn">Play Again</button>
+          <button id="clear-score-btn" class="screen-btn-secondary">Clear best score</button>
+        </div>
+
+        <!-- Pause Overlay — visible in PAUSED state; canvas visible behind it -->
+        <div id="pause-overlay" class="screen-overlay" hidden>
+          <h2>PAUSED</h2>
+          <button id="resume-btn" class="screen-btn">Resume</button>
+        </div>
+      </div>
+
+      <div id="dpad" role="group" aria-label="Directional controls" hidden>
+        <button class="dpad-btn" id="dpad-up"    aria-label="Move up">▲</button>
+        <button class="dpad-btn" id="dpad-left"  aria-label="Move left">◀</button>
+        <button class="dpad-btn" id="dpad-right" aria-label="Move right">▶</button>
+        <button class="dpad-btn" id="dpad-down"  aria-label="Move down">▼</button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

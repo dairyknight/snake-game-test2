@@ -173,10 +173,156 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
-### Phases X to Y
+### Phase 8 — HTML Screen Overlays & Accessibility
 
 **Architecture**
+- `src/ui/` module: `StartScreen` (IDLE), `GameOverScreen` (GAME_OVER), `PauseOverlay` (PAUSED), `AriaAnnouncer` (live regions).
+- Screen overlays are `position: absolute; inset: 0` inside `#canvas-container { position: relative; display: inline-block; line-height: 0 }`. The container's `line-height: 0` eliminates phantom canvas space — overlays MUST override with `line-height: normal` or all text collapses to 0px height.
+- `[hidden]` attribute toggled via `el.removeAttribute('hidden')` / `el.setAttribute('hidden', '')`. CSS overrides required: `.screen-overlay[hidden] { display: none; }` and `#dpad[hidden] { display: none; }` — CSS `display:flex`/`display:grid` beat UA `[hidden]` without explicit override.
+- `GameManager.clearHighScore()` delegate added in Phase 8.
+- `RendererConfig.showCanvasOverlay?: boolean` added; production `main.ts` passes `{ showCanvasOverlay: false }` to disable canvas overlay path. Default `true` so Phase 6 tests still pass.
+- `gameManager.events.on('stateChange', ({ to }) => { if (to === GameState.PLAYING) gameLoop.start(); })` in `main.ts` — GameLoop stops on GAME_OVER, must restart on Play Again.
+- ARIA live regions: `#score-announcer` (aria-live="polite") updated on `scoreUpdate`; `#state-announcer` (aria-live="assertive") updated on `stateChange`. Both are page-level DOM nodes outside `#game-wrapper`, present from page load.
 
 **Gotchas**
+- **`line-height` inheritance**: `#canvas-container` sets `line-height: 0`. All descendant elements inherit it — including `position: absolute` overlays. Add `line-height: normal` to `.screen-overlay` or text renders at 0px height.
+- **`display:grid` > `[hidden]`**: `#dpad { display: grid }` has higher specificity than the browser UA `[hidden] { display: none }`. Add `#dpad[hidden] { display: none; }` alongside the overlay rule. Same principle applies for any `display:flex`/`display:grid` element with a `hidden` attribute.
+- **Score capture timing**: `GameOverScreen` stores score from the `gameOver` event payload — NOT from `getScore()`. `restartGame()` calls `scoreManager.reset()`, so `getScore()` returns 0 before the overlay can display it. Capture from the event payload which fires before reset.
+- **GameLoop restart**: GameLoop.stop() is called on GAME_OVER state. Must call `gameLoop.start()` again when re-entering PLAYING. Guard in `GameLoop.start()`: `if (this._running) return` prevents double-start.
+- **TS noUnusedLocals with UI singletons**: `const _announcer = new AriaAnnouncer(gameManager)` is flagged even with `_` prefix when declared at module scope. Use `new AriaAnnouncer(gameManager)` without assignment — EventEmitter subscriptions keep the instance alive.
+- **`font-family` on overlays**: Browser UA applies Times serif to h1/h2 unless overridden. Add `font-family: system-ui, -apple-system, sans-serif` to `.screen-overlay`.
+- **WCAG AA for UI components**: Border color must be ≥3:1 contrast ratio against background. `#475569` (2.67:1) fails; raised to `#64748B` (3.8:1). Touch target min-height: 44px per WCAG 2.5.5.
 
 **Patterns to Reuse**
+- EventEmitter off() requires stored bound ref: `private readonly _onX = this._handleX.bind(this)` in constructor; pass same ref to `manager.events.off('event', this._onX)` in `destroy()`.
+- PauseOverlay focus trap pattern: save `document.activeElement` on show, restore on hide.
+- Screen overlay test setup: `document.body.innerHTML = \`<overlay HTML>\`` in `beforeEach`; `document.body.innerHTML = ''` in `afterEach`. Call `announcer.destroy()` before clearing.
+
+### Phase 7 — Input Handling
+
+**Architecture**
+- `KeyboardInput`: binds `this._handler` in constructor, stores in field for removal in `destroy()`. Maps Arrow/WASD → `queueDirection()`, P/Esc → `togglePause()`, Space/Enter → `startGame()`/`restartGame()` depending on `getState()`.
+- `TouchInput`: swipe detection via touchstart/touchend on window (30px threshold, dominant axis wins). `MediaQueryList('(max-width: 767px)')` for live viewport detection — shows/hides #dpad. `_btnCleanups: Array<() => void>` array holds cleanup lambdas for button click/pointer listeners; `_hideDpad()` drains and calls all.
+- D-pad is static HTML in `index.html` with `hidden` attribute — `TouchInput` calls `removeAttribute('hidden')` / `setAttribute('hidden', '')`. Avoids DOM creation/destruction on orientation change.
+- `#game-wrapper` column-flex div wraps canvas + dpad; gap: 16px. Canvas is constrained on mobile with `min(90vmin, calc(100svh - 192px))` (192px = 176px dpad + 16px gap).
+
+**Gotchas**
+- **TS 5.9 noUnusedLocals** flags `_`-prefixed module-level `const` vars even with underscore prefix — `const _keyboardInput = new KeyboardInput(...)` at module scope fails tsc. Fix: `new KeyboardInput(gameManager)` without assignment; the window listener holds a bound-handler ref → instance is NOT garbage collected.
+- **{ passive: false }** is required when calling `preventDefault()` in touchstart/touchend — modern browsers default to `passive: true` and silently ignore `preventDefault()` in passive listeners. Scroll suppression breaks without it.
+- `_btnCleanups` pattern is mandatory for anonymous button listeners — `removeEventListener(event, anonymousLambda)` is always a no-op. Store cleanup closures and drain in `destroy()`.
+- `MediaQueryList.addEventListener('change', handler)` (not `.addListener()` — deprecated). Remove with `removeEventListener` in `destroy()`.
+- No 180° reversal guard in `KeyboardInput` — `getSnake().currentDirection` in a keydown handler returns stale direction between ticks. `Snake.move()` is the authoritative single guard.
+
+**Patterns to Reuse**
+- `new SomeClass(manager)` without var for page-lifetime singletons where TS noUnusedLocals would flag the var.
+- `_btnCleanups: Array<() => void>` — push `() => btn.removeEventListener(...)` when wiring; call and drain in cleanup.
+- Mock GameManager for input tests: `{ getState: vi.fn(), queueDirection: vi.fn(), togglePause: vi.fn(), startGame: vi.fn(), restartGame: vi.fn() } as unknown as GameManager`
+
+### Phase 6 — Canvas Rendering Pipeline
+
+**Architecture**
+- `Renderer.ts` orchestrates: clear → board background (#1E293B) → optional grid (#334155) → food → snake → HUD → overlay. Sub-renderers are stateless.
+- Sub-renderer signature: `draw(ctx, data, cellSize, offsetX, offsetY)` — offsetX/offsetY for centering passed on each call, not stored.
+- `UIRenderer` owns all flash timer state (`_eatFlashStart`, `_gameOverFlashStart`). Subscribes to `foodEaten` + `stateChange` in constructor; stores bound handler refs for `off()` in `destroy()`.
+- `isGameOverFlashOn(now)` → `Math.floor(elapsed / GAME_OVER_FLASH_INTERVAL_MS) % 2 === 0` — true at t=0 (snake immediately red on game-over).
+- HUD font scales: `max(12, round(canvasW / 40))` — scales linearly with canvas width (avoids fixed-px unreadability at 4K).
+- PAUSED/GAME_OVER overlays are **canvas draws** (not HTML/CSS) — see ADR-001. HTML aria-live deferred to Phase 8.
+
+**Gotchas**
+- `canvas.getContext('2d')` returns **null** in happy-dom — do NOT use `vi.spyOn(ctx, ...)` on a real canvas context; use `makeMockCtx()` factory with `vi.fn()` methods cast to `CanvasRenderingContext2D`.
+- `vi.spyOn(SnakeRenderer.prototype, 'draw')` works even after `new Renderer()` — prototype spy intercepts instance calls.
+- `Renderer.destroy()` MUST be called in `afterEach` — otherwise window resize listener accumulates across test cases.
+- `UIRenderer.destroy()` MUST be called to unsubscribe `foodEaten` + `stateChange` event handlers — happy-dom EventEmitter persists across tests.
+- `vi.stubGlobal('performance', { now: vi.fn().mockReturnValue(t) })` before emitting events in UIRenderer tests; `vi.unstubAllGlobals()` in afterEach.
+- Game-over snake flash is **single-frame only** — GameLoop calls `_onDraw(0)` once then stops. `isGameOverFlashOn` returns true at t=0 so snake renders red on that final frame. No ongoing rAF after GAME_OVER.
+- `resize()` is called in `Renderer` constructor before sub-renderers are constructed — this is intentional (sets `_cellSize` before any `draw()` call).
+
+**Patterns to Reuse**
+- Sub-renderer: stateless class, no constructor args, draw(ctx, data, cellSize, offsetX, offsetY) signature.
+- `makeMockCtx()` factory pattern for canvas tests (see Renderer.test.ts, UIRenderer.test.ts).
+- Flash timer pattern: `_startTimestamp: number | null = null`; set on event; query with `now - _startTimestamp < DURATION_MS`.
+
+### Phase 5 — Scoring & Difficulty
+
+**Architecture**
+- ScoreManager is a pure data class (no EventEmitter); GameManager owns all event emission
+- SPEED_SCHEDULE sorted descending by threshold — for-of loop, first `>=` match wins: 200→75ms, 150→90ms, 100→110ms, 50→130ms, 0→150ms
+- GameLoop delegates to `manager.getTickInterval()` (not `manager.getScore()`); ScoreManager is never accessed directly from GameLoop
+- `getHighScore()` NOT yet on GameManager — deferred to Phase 6; renderer will request it
+
+**Gotchas**
+- `localStorage.clear()` in `beforeEach` is MANDATORY for any test that creates a `new ScoreManager()` — happy-dom localStorage persists across test cases within a single run; tests are flaky without this
+- `parseInt` on malformed localStorage value returns `NaN`; `currentScore > NaN` is always false — score never updates. Acceptable for single-player game.
+- `scoreUpdate` event fires on EVERY food eaten (not just when highScore changes) — payload: `{ score, highScore }`
+- `restartGame()` calls `scoreManager.reset()` (zeros currentScore) but NOT `clearHighScore()` — highScore intentionally persists across games
+
+**Patterns to Reuse**
+- Pure data class + caller-emits pattern: keep domain objects free of EventEmitter; GameManager owns GameEvents routing
+- `addN(sm, n)` helper in tests: calls `add(1)` n times to reach exact score for bracket boundary testing
+
+### Phase 4 — Snake & Board Entities
+
+**Architecture**
+- Snake: segments[] array (head = index 0); `move()` unshifts new head, pops tail (unless _growPending); `grow()` sets boolean flag (not counter)
+- Board: `checkCollision(pos, snake)` skips `segments[0]` — called AFTER `snake.move()`, so segments[0] IS the new head; checking it would always return true
+- Food: `_buildAvailable()` builds available[] in row-major order (y outer, x inner) — index 0 = (0,0), last = (boardWidth-1, boardHeight-1)
+- GameManager: `_board` is `readonly`; `_snake` and `_food` are `private` non-readonly (reset in `restartGame()`)
+- Direction constants (UP/DOWN/LEFT/RIGHT) exported from `Snake.ts` — import from there, not defined elsewhere
+
+**Gotchas**
+- `noUncheckedIndexedAccess` requires `array[i]!` non-null assertions when accessing array elements in tests
+- 180° reversal guard in Snake.move(): checks `direction.x === -currentDirection.x && direction.y === -currentDirection.y` — only exact opposites are blocked; (0,0) direction would NOT be blocked (never pass zero vectors)
+- `segments` getter returns the internal array reference with `readonly` overlay — not a defensive copy; callers must not cast away readonly
+- Food constructor calls `rng()` immediately during construction for initial spawn — tests that inject RNG must account for the constructor call consuming the first value
+
+**Patterns to Reuse**
+- RNG injection: `rng?: () => number = Math.random` — use in any class needing testable randomness
+- Entity accessor pattern: `getSnake()` / `getFood()` on GameManager expose state for the renderer (Phase 6+)
+
+### Phase 3 — Game Loop
+
+**Architecture**
+- DrawCallback = `(interpolation: number) => void` — the contract between GameLoop and Renderer; pass `renderer.draw.bind(renderer)` in Phase 6
+- GameLoop._step(now) is the @internal test seam — call directly in tests; do NOT call from production code
+- Speed tiers: intervalForScore(score) → 150/130/110/90/70ms. Active now, returns 150ms until Phase 5 wires getScore()
+
+**Gotchas**
+- happy-dom rAF does NOT auto-advance — always test GameLoop via `_step(now)` directly, never via real rAF
+- PAUSED branch resets accumulator AND updates `_lastTime` each frame — this prevents backlog on resume
+- `_lastTime = null` on `start()` — first `_step()` call initialises without phantom lag delta
+
+**Patterns to Reuse**
+- @internal JSDoc test seam pattern for browser-API-dependent classes
+- Backlog cap: `Math.min(accumulator + delta, MAX_TICKS * interval)` before drain loop
+
+### Phase 2 — Game State Machine & Event System
+
+**Architecture**
+- GameEvents interface lives in GameState.ts (co-located with enum); includes stateChange, gameOver, scoreUpdate, foodEaten
+- EventEmitter<T> uses `Record<string, any>` constraint (not unknown) — GameEvents has `undefined` values that break unknown constraint with TS interfaces lacking index signatures
+- _transition() handles state mutation + event emission atomically — never mutate _state directly
+
+**Gotchas**
+- PAUSED → GAME_OVER is a valid transition (endGame() accepts both PLAYING and PAUSED)
+- Do NOT use `const enum` — erased at compile time; breaks Vitest with isolatedModules:true
+- GameManager.restartGame() has a TODO comment for Phase 4 entity reset — populate it there, don't replace it
+
+**Patterns to Reuse**
+- Private `_transition(to)` pattern for atomic state + event emission
+- EventEmitter subscription pattern: `manager.events.on('stateChange', handler)`
+
+### Phase 1 — Project Scaffolding
+
+**Architecture**
+- Vite vanilla-ts template; vite.config.ts imports from `vitest/config` (not `vite`) to enable `test` config key without type errors
+- @/ path alias resolves to src/ — use in all imports, e.g. `import { foo } from '@/game/Foo'`
+- Vitest environment is `happy-dom` (not jsdom) — Canvas API available
+
+**Gotchas**
+- `passWithNoTests: true` set in vitest config — required or `npm run test` exits 1 with no test files
+- Do NOT install jsdom — happy-dom is the configured environment; jsdom is unused and was removed
+- tsconfig has `noUnusedLocals` and `noUnusedParameters` — prefix unused vars/params with `_`
+
+**Patterns to Reuse**
+- Quality gate order is always: `tsc --noEmit` → `npm run test` → `npm run build`
+- Each phase gets its own branch `agent/phase-{N}-{description}` and its own PR
