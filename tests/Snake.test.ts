@@ -23,9 +23,9 @@ describe('Snake', () => {
 
     it('segments are [(10,9), (9,9), (8,9)] head to tail', () => {
       const segs = snake.segments;
-      expect(segs[0].equals(new Vector2(10, 9))).toBe(true);
-      expect(segs[1].equals(new Vector2(9, 9))).toBe(true);
-      expect(segs[2].equals(new Vector2(8, 9))).toBe(true);
+      expect(segs[0]!.equals(new Vector2(10, 9))).toBe(true);
+      expect(segs[1]!.equals(new Vector2(9, 9))).toBe(true);
+      expect(segs[2]!.equals(new Vector2(8, 9))).toBe(true);
     });
 
     it('currentDirection is RIGHT (1, 0)', () => {
@@ -41,9 +41,9 @@ describe('Snake', () => {
       snake.move(RIGHT);
       expect(snake.head.equals(new Vector2(11, 9))).toBe(true);
       expect(snake.segments.length).toBe(3);
-      expect(snake.segments[0].equals(new Vector2(11, 9))).toBe(true);
-      expect(snake.segments[1].equals(new Vector2(10, 9))).toBe(true);
-      expect(snake.segments[2].equals(new Vector2(9, 9))).toBe(true);
+      expect(snake.segments[0]!.equals(new Vector2(11, 9))).toBe(true);
+      expect(snake.segments[1]!.equals(new Vector2(10, 9))).toBe(true);
+      expect(snake.segments[2]!.equals(new Vector2(9, 9))).toBe(true);
     });
 
     it('move(UP): head becomes (10,8) and length stays 3', () => {
@@ -138,7 +138,7 @@ describe('Snake', () => {
       expect(snake.segments.length).toBe(4);
       // original tail should still be present
       const segs = snake.segments;
-      expect(segs[3].equals(new Vector2(8, 9))).toBe(true);
+      expect(segs[3]!.equals(new Vector2(8, 9))).toBe(true);
     });
 
     it('after grow() then move(RIGHT): currentDirection is still updated correctly', () => {
@@ -167,16 +167,16 @@ describe('Snake', () => {
   // ---------------------------------------------------------------------------
   describe('segments readonly', () => {
     it('snake.segments returns the same values used for head checks', () => {
-      expect(snake.segments[0].equals(snake.head)).toBe(true);
+      expect(snake.segments[0]!.equals(snake.head)).toBe(true);
     });
 
     it('segments returns a readonly view (TypeScript-level); values match head', () => {
       // The segments getter returns a readonly Vector2[] — accessing values is correct
       const segs = snake.segments;
       expect(segs.length).toBe(3);
-      expect(segs[0].equals(new Vector2(10, 9))).toBe(true);
-      expect(segs[1].equals(new Vector2(9, 9))).toBe(true);
-      expect(segs[2].equals(new Vector2(8, 9))).toBe(true);
+      expect(segs[0]!.equals(new Vector2(10, 9))).toBe(true);
+      expect(segs[1]!.equals(new Vector2(9, 9))).toBe(true);
+      expect(segs[2]!.equals(new Vector2(8, 9))).toBe(true);
     });
   });
 });
