@@ -59,17 +59,22 @@ export class UIRenderer {
   ): void {
     const tier = SPEED_TIERS.find(t => tickInterval <= t.threshold)?.tier ?? 1;
 
+    // Scale font with canvas size: 16px at 640px canvas, caps at 12px minimum.
+    const fontSize = Math.max(12, Math.round(canvasW / 40));
+    const y = Math.round(fontSize * 1.4);
+    const pad = Math.round(canvasW / 80);
+
     ctx.fillStyle = '#F1F5F9';
-    ctx.font = '16px sans-serif';
+    ctx.font = `${fontSize}px sans-serif`;
 
     ctx.textAlign = 'left';
-    ctx.fillText(`SCORE: ${score}`, 8, 20);
+    ctx.fillText(`SCORE: ${score}`, pad, y);
 
     ctx.textAlign = 'right';
-    ctx.fillText(`BEST: ${highScore}`, canvasW - 8, 20);
+    ctx.fillText(`BEST: ${highScore}`, canvasW - pad, y);
 
     ctx.textAlign = 'center';
-    ctx.fillText(`SPEED: ${tier}`, canvasW / 2, 20);
+    ctx.fillText(`SPEED: ${tier}`, canvasW / 2, y);
   }
 
   drawOverlay(
@@ -82,15 +87,19 @@ export class UIRenderer {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(0, 0, canvasW, canvasH);
 
+    // Scale overlay font with canvas size: 32px at 640px canvas.
+    const fontSize = Math.max(18, Math.round(canvasW / 20));
+    const lineGap = Math.round(fontSize * 0.8);
+
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 32px sans-serif';
+    ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
 
     if (state === GameState.PAUSED) {
       ctx.fillText('PAUSED', canvasW / 2, canvasH / 2);
     } else if (state === GameState.GAME_OVER) {
-      ctx.fillText('GAME OVER', canvasW / 2, canvasH / 2 - 20);
-      ctx.fillText(`Score: ${score}`, canvasW / 2, canvasH / 2 + 20);
+      ctx.fillText('GAME OVER', canvasW / 2, canvasH / 2 - lineGap);
+      ctx.fillText(`Score: ${score}`, canvasW / 2, canvasH / 2 + lineGap);
     }
   }
 
