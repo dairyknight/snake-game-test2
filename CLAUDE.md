@@ -173,10 +173,34 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
-### Phases X to Y
+### Phase 2 — Game State Machine & Event System
 
 **Architecture**
+- GameEvents interface lives in GameState.ts (co-located with enum); includes stateChange, gameOver, scoreUpdate, foodEaten
+- EventEmitter<T> uses `Record<string, any>` constraint (not unknown) — GameEvents has `undefined` values that break unknown constraint with TS interfaces lacking index signatures
+- _transition() handles state mutation + event emission atomically — never mutate _state directly
 
 **Gotchas**
+- PAUSED → GAME_OVER is a valid transition (endGame() accepts both PLAYING and PAUSED)
+- Do NOT use `const enum` — erased at compile time; breaks Vitest with isolatedModules:true
+- GameManager.restartGame() has a TODO comment for Phase 4 entity reset — populate it there, don't replace it
 
 **Patterns to Reuse**
+- Private `_transition(to)` pattern for atomic state + event emission
+- EventEmitter subscription pattern: `manager.events.on('stateChange', handler)`
+
+### Phase 1 — Project Scaffolding
+
+**Architecture**
+- Vite vanilla-ts template; vite.config.ts imports from `vitest/config` (not `vite`) to enable `test` config key without type errors
+- @/ path alias resolves to src/ — use in all imports, e.g. `import { foo } from '@/game/Foo'`
+- Vitest environment is `happy-dom` (not jsdom) — Canvas API available
+
+**Gotchas**
+- `passWithNoTests: true` set in vitest config — required or `npm run test` exits 1 with no test files
+- Do NOT install jsdom — happy-dom is the configured environment; jsdom is unused and was removed
+- tsconfig has `noUnusedLocals` and `noUnusedParameters` — prefix unused vars/params with `_`
+
+**Patterns to Reuse**
+- Quality gate order is always: `tsc --noEmit` → `npm run test` → `npm run build`
+- Each phase gets its own branch `agent/phase-{N}-{description}` and its own PR
