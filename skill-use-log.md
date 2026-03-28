@@ -41,3 +41,17 @@ Tracks every skill invocation across all phases for analysis.
 | 3 | /phase-test → /cso | Main Agent | SKIPPED — no security surface |
 | 3 | /phase-ship | Main Agent | SUCCESS — quality gates PASS; PR #3: https://github.com/dairyknight/snake-game-test2/pull/3 |
 | 3 | /phase-compact | Main Agent | SUCCESS — phase-3-ledger.md, session-state updated, CLAUDE.md updated, phase-03.md Done |
+| 4 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED — 5 binding decisions: skip-head collision, RNG injection, _snake/_food non-readonly, direction constants in Snake.ts, grow flag not counter |
+| 4 | /phase-plan → /plan-design-review | Main Agent | SKIPPED — no UI in Phase 4 |
+| 4 | /phase-plan → /cso | Main Agent | SKIPPED — no security surface |
+| 4 | /phase-execute (tracer bullet) | Main Agent | SUCCESS — Snake.ts + Board.ts + Food.ts + GameManager.ts wired; tsc --noEmit passes; commit fe94680 |
+| 4 | /phase-execute (T1: Snake tests) | Sub-Agent | SUCCESS — 23 tests; commit d933ebe |
+| 4 | /phase-execute (T2: Board tests) | Sub-Agent | SUCCESS — 14 tests; commit f992e47 |
+| 4 | /phase-execute (T3: Food tests) | Sub-Agent | SUCCESS — 12 tests; commit 07b746c |
+| 4 | /phase-execute (T4: GameManager integration) | Sub-Agent | SUCCESS — 20 new integration tests; 135 total; commit 9a459db |
+| 4 | /phase-test → /review (Stage 1) | Main Agent | APPROVED — 0 required fixes; 2 minor acceptable trade-offs documented; tsc fix for noUncheckedIndexedAccess in Snake.test.ts |
+| 4 | /phase-test → /qa (Stage 2) | Main Agent | SKIPPED — no user-facing flows; pure logic layer; browse binary not available; 135/135 tests pass |
+| 4 | /phase-test → /design-review | Main Agent | SKIPPED — no UI in Phase 4 |
+| 4 | /phase-test → /cso | Main Agent | SKIPPED — no security surface |
+| 4 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; PR #4: https://github.com/dairyknight/snake-game-test2/pull/4 |
+| 4 | /phase-compact | Main Agent | SUCCESS — phase-4-ledger.md written, session-state.md updated, CLAUDE.md Phase 4 knowledge added |

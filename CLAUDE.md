@@ -173,6 +173,25 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 4 — Snake & Board Entities
+
+**Architecture**
+- Snake: segments[] array (head = index 0); `move()` unshifts new head, pops tail (unless _growPending); `grow()` sets boolean flag (not counter)
+- Board: `checkCollision(pos, snake)` skips `segments[0]` — called AFTER `snake.move()`, so segments[0] IS the new head; checking it would always return true
+- Food: `_buildAvailable()` builds available[] in row-major order (y outer, x inner) — index 0 = (0,0), last = (boardWidth-1, boardHeight-1)
+- GameManager: `_board` is `readonly`; `_snake` and `_food` are `private` non-readonly (reset in `restartGame()`)
+- Direction constants (UP/DOWN/LEFT/RIGHT) exported from `Snake.ts` — import from there, not defined elsewhere
+
+**Gotchas**
+- `noUncheckedIndexedAccess` requires `array[i]!` non-null assertions when accessing array elements in tests
+- 180° reversal guard in Snake.move(): checks `direction.x === -currentDirection.x && direction.y === -currentDirection.y` — only exact opposites are blocked; (0,0) direction would NOT be blocked (never pass zero vectors)
+- `segments` getter returns the internal array reference with `readonly` overlay — not a defensive copy; callers must not cast away readonly
+- Food constructor calls `rng()` immediately during construction for initial spawn — tests that inject RNG must account for the constructor call consuming the first value
+
+**Patterns to Reuse**
+- RNG injection: `rng?: () => number = Math.random` — use in any class needing testable randomness
+- Entity accessor pattern: `getSnake()` / `getFood()` on GameManager expose state for the renderer (Phase 6+)
+
 ### Phase 3 — Game Loop
 
 **Architecture**
