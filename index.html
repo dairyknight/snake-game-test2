@@ -41,8 +41,9 @@
         text-align: center;
         padding: 24px;
       }
-      /* Critical: hidden attribute must win over display:flex */
+      /* Critical: hidden attribute must win over display:flex and display:grid */
       .screen-overlay[hidden] { display: none; }
+      #dpad[hidden] { display: none; }
       #pause-overlay {
         background: rgba(0, 0, 0, 0.6);
       }
