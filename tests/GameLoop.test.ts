@@ -171,11 +171,11 @@ describe('GameLoop', () => {
     })
   })
 
-  // ─── Speed tiers (test intervalForScore indirectly) ───────────────────────
+  // ─── Speed tiers (test getTickInterval delegation) ───────────────────────
 
   describe('speed tiers', () => {
-    it('at score=0, takes 150ms delta to fire one tick', () => {
-      // getScore() returns 0 by default — no mock needed
+    it('at score=0 (default), getTickInterval() returns 150ms and loop uses 150ms ticks', () => {
+      // getTickInterval() returns 150ms by default — no mock needed
       const update = vi.spyOn(manager, 'update')
       startPlaying()
       loop._step(149) // just under 150ms — no tick
@@ -184,8 +184,8 @@ describe('GameLoop', () => {
       expect(update).toHaveBeenCalledTimes(1)
     })
 
-    it('at score=10, takes 130ms delta to fire one tick', () => {
-      vi.spyOn(manager, 'getScore').mockReturnValue(10)
+    it('when getTickInterval() is mocked to return 75ms, loop uses 75ms ticks', () => {
+      vi.spyOn(manager, 'getTickInterval').mockReturnValue(75)
       const update = vi.spyOn(manager, 'update')
 
       loop.start()
@@ -193,11 +193,30 @@ describe('GameLoop', () => {
       loop._step(0) // init _lastTime
       draw.mockClear()
 
-      loop._step(129) // just under 130ms — no tick
+      loop._step(74) // just under 75ms — no tick
       expect(update).not.toHaveBeenCalled()
 
-      loop._step(129 + 130) // exactly 130ms later — one tick
+      loop._step(74 + 75) // exactly 75ms later — one tick
       expect(update).toHaveBeenCalledTimes(1)
+    })
+
+    it('getTickInterval() is called each tick cycle (not cached)', () => {
+      const getTickIntervalSpy = vi.spyOn(manager, 'getTickInterval')
+
+      loop.start()
+      manager.startGame()
+      loop._step(0) // init _lastTime — first call
+      const callsAfterInit = getTickIntervalSpy.mock.calls.length
+
+      loop._step(150) // fires one tick
+      const callsAfterTick1 = getTickIntervalSpy.mock.calls.length
+
+      loop._step(300) // fires another tick
+      const callsAfterTick2 = getTickIntervalSpy.mock.calls.length
+
+      // Each _step() call should invoke getTickInterval() — it must not be cached
+      expect(callsAfterTick1).toBeGreaterThan(callsAfterInit)
+      expect(callsAfterTick2).toBeGreaterThan(callsAfterTick1)
     })
   })
 

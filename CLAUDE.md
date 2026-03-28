@@ -173,6 +173,24 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 5 — Scoring & Difficulty
+
+**Architecture**
+- ScoreManager is a pure data class (no EventEmitter); GameManager owns all event emission
+- SPEED_SCHEDULE sorted descending by threshold — for-of loop, first `>=` match wins: 200→75ms, 150→90ms, 100→110ms, 50→130ms, 0→150ms
+- GameLoop delegates to `manager.getTickInterval()` (not `manager.getScore()`); ScoreManager is never accessed directly from GameLoop
+- `getHighScore()` NOT yet on GameManager — deferred to Phase 6; renderer will request it
+
+**Gotchas**
+- `localStorage.clear()` in `beforeEach` is MANDATORY for any test that creates a `new ScoreManager()` — happy-dom localStorage persists across test cases within a single run; tests are flaky without this
+- `parseInt` on malformed localStorage value returns `NaN`; `currentScore > NaN` is always false — score never updates. Acceptable for single-player game.
+- `scoreUpdate` event fires on EVERY food eaten (not just when highScore changes) — payload: `{ score, highScore }`
+- `restartGame()` calls `scoreManager.reset()` (zeros currentScore) but NOT `clearHighScore()` — highScore intentionally persists across games
+
+**Patterns to Reuse**
+- Pure data class + caller-emits pattern: keep domain objects free of EventEmitter; GameManager owns GameEvents routing
+- `addN(sm, n)` helper in tests: calls `add(1)` n times to reach exact score for bracket boundary testing
+
 ### Phase 4 — Snake & Board Entities
 
 **Architecture**

@@ -3,6 +3,7 @@ import { EventEmitter } from '@/utils/EventEmitter';
 import { Board } from '@/game/Board';
 import { Snake, Direction } from '@/game/Snake';
 import { Food } from '@/game/Food';
+import { ScoreManager } from '@/game/ScoreManager';
 
 export class GameManager {
   private _state: GameState = GameState.IDLE;
@@ -11,21 +12,28 @@ export class GameManager {
   private readonly _board: Board;
   private _snake: Snake;
   private _food: Food;
+  private readonly _scoreManager: ScoreManager;
   private _pendingDirection: Direction | null = null;
 
   constructor() {
     this._board = new Board();
     this._snake = new Snake();
     this._food = new Food(this._board.width, this._board.height, Array.from(this._snake.segments));
+    this._scoreManager = new ScoreManager();
   }
 
   getState(): GameState {
     return this._state;
   }
 
-  /** Scoring stub — returns 0 until Phase 5 wires ScoreManager */
+  /** Current score for this game session. */
   getScore(): number {
-    return 0;
+    return this._scoreManager.currentScore;
+  }
+
+  /** Tick interval (ms) based on current score bracket — delegates to ScoreManager. */
+  getTickInterval(): number {
+    return this._scoreManager.getTickInterval();
   }
 
   private _transition(to: GameState): void {
@@ -65,6 +73,7 @@ export class GameManager {
     this._snake = new Snake();
     this._food = new Food(this._board.width, this._board.height, Array.from(this._snake.segments));
     this._pendingDirection = null;
+    this._scoreManager.reset();
     this._transition(GameState.IDLE);
   }
 
@@ -119,6 +128,11 @@ export class GameManager {
     if (this._food.position.equals(this._snake.head)) {
       this._snake.grow();
       this._food.respawn(Array.from(this._snake.segments));
+      this._scoreManager.add(10);
+      this.events.emit('scoreUpdate', {
+        score: this._scoreManager.currentScore,
+        highScore: this._scoreManager.highScore,
+      });
       this.events.emit('foodEaten', undefined);
     }
   }
