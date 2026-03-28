@@ -5,6 +5,9 @@ import { GameState } from '@/state/GameState';
 import { KeyboardInput } from '@/input/KeyboardInput';
 import { TouchInput } from '@/input/TouchInput';
 import { StartScreen } from '@/ui/StartScreen';
+import { GameOverScreen } from '@/ui/GameOverScreen';
+import { PauseOverlay } from '@/ui/PauseOverlay';
+import { AriaAnnouncer } from '@/ui/AriaAnnouncer';
 
 const gameManager = new GameManager();
 
@@ -28,5 +31,8 @@ gameManager.events.on('stateChange', ({ to }) => {
 new KeyboardInput(gameManager);
 new TouchInput(gameManager);
 
-// UI screens — instantiated after input; EventEmitter subscriptions keep instances alive
+// UI screens — EventEmitter subscriptions keep instances alive
 new StartScreen(gameManager);
+new GameOverScreen(gameManager);
+new PauseOverlay(gameManager);
+new AriaAnnouncer(gameManager);
