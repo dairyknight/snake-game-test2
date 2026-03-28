@@ -58,3 +58,13 @@ Tracks every skill invocation across all phases for analysis.
 | 5 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED_WITH_NOTES — 4 binding decisions: event ownership in GameManager, getTickInterval delegation via GameManager, SPEED_SCHEDULE for-of pattern, getHighScore() deferred to Phase 6 |
 | 5 | /phase-plan → /plan-design-review | Main Agent | SKIPPED — no UI in Phase 5 |
 | 5 | /phase-plan → /cso | Main Agent | SKIPPED — localStorage only, no auth/APIs |
+| 5 | /phase-execute (tracer bullet) | Main Agent | SUCCESS — ScoreManager.ts + GameManager wired + GameLoop delegated; tsc passes; 135 existing tests pass |
+| 5 | /phase-execute (T1: ScoreManager tests) | Sub-Agent | SUCCESS — 25 tests; localStorage isolation; all bracket boundaries |
+| 5 | /phase-execute (T2: GameManager scoring integration) | Sub-Agent | SUCCESS — 6 new tests; stub getScore()=0 removed; 169 total |
+| 5 | /phase-execute (T3: GameLoop delegation tests) | Sub-Agent | SUCCESS — old threshold tests replaced; delegation verified |
+| 5 | /phase-test → /review (Stage 1) | Main Agent | APPROVED — 1 fix: unused randomSpy (noUnusedLocals); 0 required arch changes |
+| 5 | /phase-test → /qa | Main Agent | SKIPPED — no user-facing flows; pure logic layer |
+| 5 | /phase-test → /design-review | Main Agent | SKIPPED — no UI in Phase 5 |
+| 5 | /phase-test → /cso | Main Agent | SKIPPED — reviewed phase-plan /cso findings (localStorage only) |
+| 5 | /phase-ship | Main Agent | SUCCESS — all quality gates PASS; PR #5: https://github.com/dairyknight/snake-game-test2/pull/5 |
+| 5 | /phase-compact | Main Agent | SUCCESS — phase-5-ledger.md written, session-state updated, CLAUDE.md Phase 5 knowledge added |
