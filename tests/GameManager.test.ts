@@ -514,7 +514,7 @@ describe('GameManager', () => {
       // So to place food at (13,9) for second eat: Math.floor(rng * 397) = 190 → rng = 190/397.
       // Second update after first eat: snake moves right to (12,9) with grow, segments become 4: (12,9),(11,9),(10,9),(9,9).
       // Food is at (13,9). Third update: snake moves right to (13,9) — eats second food → score=20.
-      const randomSpy = vi.spyOn(Math, 'random')
+      vi.spyOn(Math, 'random')
         .mockReturnValueOnce(188 / 397)  // initial food spawn at (11,9)
         .mockReturnValueOnce(190 / 397)  // food respawn at (13,9) after first eat
         .mockReturnValue(0)              // any further respawns (food at (0,0))
@@ -547,7 +547,7 @@ describe('GameManager', () => {
 
     it('after eating 2 foods then hitting a wall, gameOver fires with { score: 20 }', () => {
       // Place food at (11,9) for first eat, then (13,9) for second eat (same as above).
-      const randomSpy = vi.spyOn(Math, 'random')
+      vi.spyOn(Math, 'random')
         .mockReturnValueOnce(188 / 397)
         .mockReturnValueOnce(190 / 397)
         .mockReturnValue(0)
@@ -764,7 +764,7 @@ describe('GameManager', () => {
       //   Update 8: move right→(18,9), grow consumed, 7 segs. No eat.
       //   Update 9: move right→(19,9), 7 segs eat. Score=50. grow().
 
-      const randomSpy = vi.spyOn(Math, 'random')
+      vi.spyOn(Math, 'random')
         .mockReturnValueOnce(188 / 397)  // initial food → (11,9)
         .mockReturnValueOnce(190 / 397)  // respawn after eat1 → (13,9)
         .mockReturnValueOnce(191 / 396)  // respawn after eat2 → (15,9)
