@@ -173,6 +173,22 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
+### Phase 3 — Game Loop
+
+**Architecture**
+- DrawCallback = `(interpolation: number) => void` — the contract between GameLoop and Renderer; pass `renderer.draw.bind(renderer)` in Phase 6
+- GameLoop._step(now) is the @internal test seam — call directly in tests; do NOT call from production code
+- Speed tiers: intervalForScore(score) → 150/130/110/90/70ms. Active now, returns 150ms until Phase 5 wires getScore()
+
+**Gotchas**
+- happy-dom rAF does NOT auto-advance — always test GameLoop via `_step(now)` directly, never via real rAF
+- PAUSED branch resets accumulator AND updates `_lastTime` each frame — this prevents backlog on resume
+- `_lastTime = null` on `start()` — first `_step()` call initialises without phantom lag delta
+
+**Patterns to Reuse**
+- @internal JSDoc test seam pattern for browser-API-dependent classes
+- Backlog cap: `Math.min(accumulator + delta, MAX_TICKS * interval)` before drain loop
+
 ### Phase 2 — Game State Machine & Event System
 
 **Architecture**
