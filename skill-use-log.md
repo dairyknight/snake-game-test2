@@ -28,3 +28,14 @@ Tracks every skill invocation across all phases for analysis.
 | 2 | /phase-test → /design-review | Main Agent | SKIPPED — no UI in Phase 2 |
 | 2 | /phase-test → /cso | Main Agent | SKIPPED — no security surface |
 | 2 | /phase-ship | Main Agent | SUCCESS — quality gates PASS; PR #2 opened: https://github.com/dairyknight/snake-game-test2/pull/2 |
+| 2 | /phase-compact | Main Agent | SUCCESS — phase-2-ledger.md written, session-state.md updated, CLAUDE.md knowledge updated, phase-02.md marked Done |
+| 3 | /phase-plan → /plan-eng-review | Main Agent (via sub-agent) | APPROVED — 3 binding decisions: DrawCallback type, _step() test hook, speed schedule table; 9 negative constraints |
+| 3 | /phase-plan → /plan-design-review | Main Agent | SKIPPED — no UI in Phase 3 |
+| 3 | /phase-plan → /cso | Main Agent | SKIPPED — no security surface |
+| 3 | /phase-execute (tracer bullet) | Main Agent | SUCCESS — GameLoop.ts full impl; tsc --noEmit passes |
+| 3 | /phase-execute (I-A: GameLoop tests) | Sub-Agent | SUCCESS — 22 new tests; 73 total; commit 311cd9c |
+| 3 | /phase-execute (I-B: main.ts wire-up) | Sub-Agent | SUCCESS — GameManager+GameLoop wired; build 2.75kB; commit ea85c1e |
+| 3 | /phase-test → /review (Stage 1) | Sub-Agent | APPROVED — all 6 criteria PASS; 73/73 tests; no fixes needed |
+| 3 | /phase-test → /qa | Main Agent | SKIPPED — no user-facing flows yet |
+| 3 | /phase-test → /design-review | Main Agent | SKIPPED — no UI |
+| 3 | /phase-test → /cso | Main Agent | SKIPPED — no security surface |
