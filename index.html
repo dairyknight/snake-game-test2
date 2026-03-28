@@ -40,6 +40,7 @@
         color: #F8FAFC;
         text-align: center;
         padding: 24px;
+        line-height: normal; /* reset: #canvas-container sets line-height:0 to kill phantom space; overlays must override */
       }
       /* Critical: hidden attribute must win over display:flex and display:grid */
       .screen-overlay[hidden] { display: none; }
