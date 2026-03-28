@@ -173,10 +173,18 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
-### Phases X to Y
+### Phase 1 — Project Scaffolding
 
 **Architecture**
+- Vite vanilla-ts template; vite.config.ts imports from `vitest/config` (not `vite`) to enable `test` config key without type errors
+- @/ path alias resolves to src/ — use in all imports, e.g. `import { foo } from '@/game/Foo'`
+- Vitest environment is `happy-dom` (not jsdom) — Canvas API available
 
 **Gotchas**
+- `passWithNoTests: true` set in vitest config — required or `npm run test` exits 1 with no test files
+- Do NOT install jsdom — happy-dom is the configured environment; jsdom is unused and was removed
+- tsconfig has `noUnusedLocals` and `noUnusedParameters` — prefix unused vars/params with `_`
 
 **Patterns to Reuse**
+- Quality gate order is always: `tsc --noEmit` → `npm run test` → `npm run build`
+- Each phase gets its own branch `agent/phase-{N}-{description}` and its own PR
