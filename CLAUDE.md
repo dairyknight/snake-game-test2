@@ -173,10 +173,50 @@ product-context/              # Human-authored source of truth
 
 _This section is updated by the agent after every phase. Contains hard-won knowledge future sessions depend on. Do not delete entries — only add or amend._
 
-### Phases X to Y
+### Phase 3 — Game Loop
 
 **Architecture**
+- DrawCallback = `(interpolation: number) => void` — the contract between GameLoop and Renderer; pass `renderer.draw.bind(renderer)` in Phase 6
+- GameLoop._step(now) is the @internal test seam — call directly in tests; do NOT call from production code
+- Speed tiers: intervalForScore(score) → 150/130/110/90/70ms. Active now, returns 150ms until Phase 5 wires getScore()
 
 **Gotchas**
+- happy-dom rAF does NOT auto-advance — always test GameLoop via `_step(now)` directly, never via real rAF
+- PAUSED branch resets accumulator AND updates `_lastTime` each frame — this prevents backlog on resume
+- `_lastTime = null` on `start()` — first `_step()` call initialises without phantom lag delta
 
 **Patterns to Reuse**
+- @internal JSDoc test seam pattern for browser-API-dependent classes
+- Backlog cap: `Math.min(accumulator + delta, MAX_TICKS * interval)` before drain loop
+
+### Phase 2 — Game State Machine & Event System
+
+**Architecture**
+- GameEvents interface lives in GameState.ts (co-located with enum); includes stateChange, gameOver, scoreUpdate, foodEaten
+- EventEmitter<T> uses `Record<string, any>` constraint (not unknown) — GameEvents has `undefined` values that break unknown constraint with TS interfaces lacking index signatures
+- _transition() handles state mutation + event emission atomically — never mutate _state directly
+
+**Gotchas**
+- PAUSED → GAME_OVER is a valid transition (endGame() accepts both PLAYING and PAUSED)
+- Do NOT use `const enum` — erased at compile time; breaks Vitest with isolatedModules:true
+- GameManager.restartGame() has a TODO comment for Phase 4 entity reset — populate it there, don't replace it
+
+**Patterns to Reuse**
+- Private `_transition(to)` pattern for atomic state + event emission
+- EventEmitter subscription pattern: `manager.events.on('stateChange', handler)`
+
+### Phase 1 — Project Scaffolding
+
+**Architecture**
+- Vite vanilla-ts template; vite.config.ts imports from `vitest/config` (not `vite`) to enable `test` config key without type errors
+- @/ path alias resolves to src/ — use in all imports, e.g. `import { foo } from '@/game/Foo'`
+- Vitest environment is `happy-dom` (not jsdom) — Canvas API available
+
+**Gotchas**
+- `passWithNoTests: true` set in vitest config — required or `npm run test` exits 1 with no test files
+- Do NOT install jsdom — happy-dom is the configured environment; jsdom is unused and was removed
+- tsconfig has `noUnusedLocals` and `noUnusedParameters` — prefix unused vars/params with `_`
+
+**Patterns to Reuse**
+- Quality gate order is always: `tsc --noEmit` → `npm run test` → `npm run build`
+- Each phase gets its own branch `agent/phase-{N}-{description}` and its own PR
